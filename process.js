@@ -149,7 +149,7 @@ function calculatePhysicsStep() {
 function step(dt) {
     // 0. Update Pressure first (so following steps use latest value)
     // Base pressure + valve-dependent dynamic drop + random noise - boiler failure
-    HmiDB.vis_SteamPressure = Math.max(0, 3.0 - boilerFailureEffect + steamNoiseOffset - (currentValvePosition/100)*0.2 + (Math.random()-0.5)*0.02);
+    HmiDB.vis_SteamPressure = Math.max(0.5, 3.0 - boilerFailureEffect + steamNoiseOffset - (currentValvePosition/100)*0.2 + (Math.random()-0.5)*0.02);
 
     // 1. Apply disturbances
     const { eff_K_water, eff_Valve_Stroking } = applyPhysicsDisturbances(dt);
