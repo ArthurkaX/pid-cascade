@@ -8,7 +8,7 @@
 const CHART_MAX_BUFFER_POINTS = 200000;
 const TEST_SETTLED_THRESHOLD = 1.0;
 const TEST_SETTLED_DURATION = 15;
-const TEST_PHASE_TIMEOUT = { stabilize: 60, product: 150, water: 150, boiler: 60 };
+const TEST_PHASE_TIMEOUT = { stabilize: 360, product: 180, water: 300, boiler: 90 };
 const DEFAULT_TIME_WINDOW = 60;
 const DEFAULT_SETPOINT = 72;
 const DEFAULT_TEMPS = { product: 20, water: 55 };
