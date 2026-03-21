@@ -99,10 +99,10 @@ function applyPhysicsDisturbances(dt) {
     const noise = (Math.random() - 0.5) * 0.1;
     tMilkInlet = tMilkInletCurrent + noise;
 
-    // 2. Boiler Failure (Gradual reduction to 0 BAR)
+    // 2. Boiler Failure (Gradual reduction to 2 BAR)
     if (flags & 0x01) {
-        // Slow failure: takes about 30 seconds to drop from 3 BAR to 0 BAR
-        boilerFailureEffect = Math.min(3.0, boilerFailureEffect + dt * 0.1);
+        // Slow failure: takes about 20 seconds to drop from 3 BAR to 2 BAR
+        boilerFailureEffect = Math.min(2.0, boilerFailureEffect + dt * 0.1);
     } else {
         // Recovery: slightly faster recovery (10 seconds)
         boilerFailureEffect = Math.max(0, boilerFailureEffect - dt * 0.3);

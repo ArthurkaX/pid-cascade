@@ -9,6 +9,8 @@ const CHART_MAX_BUFFER_POINTS = 200000;
 const TEST_SETTLED_THRESHOLD = 1.0;
 const TEST_SETTLED_DURATION = 15;
 const TEST_PHASE_TIMEOUT = { stabilize: 360, product: 180, water: 300, boiler: 90 };
+const TEST_BOILER_TARGET_PRESSURE = 1.0;
+const TEST_BOILER_HOLD_DURATION = 15;
 const DEFAULT_TIME_WINDOW = 60;
 const DEFAULT_SETPOINT = 72;
 const DEFAULT_TEMPS = { product: 20, water: 55 };
@@ -242,6 +244,8 @@ let testStartTime = 0;
 let testInletReached = false;
 let testInletLastLogged = -1;
 let lastProcessedTestState = -1;
+let boilerTargetReached = false;
+let boilerHoldTimer = 0;
 let lastHmi = null;
 let lastInputs = null;
 let lastOutputs = null;
@@ -1158,6 +1162,8 @@ function startTest(hmi) {
     testInletReached = false;
     testInletLastLogged = -1;
     lastProcessedTestState = -1;
+    boilerTargetReached = false;
+    boilerHoldTimer = 0;
     
     disturbanceFlags |= 0x02;
     disturbanceFlags &= ~0x01;
@@ -1265,25 +1271,38 @@ function handleTestStateMachine(hmi, inputs) {
         }
     }
     else if (testState === 5) {
-        if (dom.runTestBtn) dom.runTestBtn.textContent = `Test: Boiler Fail (${testStageTimer.toFixed(0)}s)`;
+        const pressure = hmi.vis_SteamPressure;
         
-        if (testStageTimer >= TEST_PHASE_TIMEOUT.boiler) {
-            const finalScore = dom.iaeDisplay ? dom.iaeDisplay.textContent : 'Unknown';
-            const totalDuration = hmi.vis_SimulationTime - testStartTime;
+        if (!boilerTargetReached && pressure <= TEST_BOILER_TARGET_PRESSURE) {
+            boilerTargetReached = true;
+            console.log(`[TEST] +${elapsed}s Boiler pressure reached ${pressure.toFixed(1)} Bar (target: ${TEST_BOILER_TARGET_PRESSURE} Bar)`);
+        }
+        
+        if (boilerTargetReached) {
+            boilerHoldTimer += dt;
+            const remaining = Math.max(0, TEST_BOILER_HOLD_DURATION - boilerHoldTimer).toFixed(0);
+            if (dom.runTestBtn) dom.runTestBtn.textContent = `Test: Hold (${remaining}s)`;
             
-            console.log(`[TEST] +${elapsed}s Phase 5: Boiler Fail | Pressure=${hmi.vis_SteamPressure?.toFixed(1)} Bar | delta=${hmi.vis_ProductDelta?.toFixed(2)}°C`);
-            console.log(`%c[TEST] +${elapsed}s ========== COMPLETED ==========`, 'color: #10b981; font-weight: bold');
-            console.log(`[TEST] +${elapsed}s Final IAE Score: ${finalScore}`);
-            console.log(`[TEST] +${elapsed}s Total Duration: ${totalDuration?.toFixed(1)}s`);
-            console.log(`[TEST] ==================================`);
-            
-            isTestRunning = false;
-            setTestModeUI(false);
-            
-            setTimeout(() => {
-                showScoreModal(finalScore, currentControlMode, totalDuration?.toFixed(1));
-            }, 100);
-            if (dom.runTestBtn) dom.runTestBtn.textContent = `Run Test`;
+            if (boilerHoldTimer >= TEST_BOILER_HOLD_DURATION) {
+                const finalScore = dom.iaeDisplay ? dom.iaeDisplay.textContent : 'Unknown';
+                const totalDuration = hmi.vis_SimulationTime - testStartTime;
+                
+                console.log(`[TEST] +${elapsed}s Phase 5: Boiler Fail | Pressure=${pressure.toFixed(1)} Bar | delta=${hmi.vis_ProductDelta?.toFixed(2)}°C`);
+                console.log(`%c[TEST] +${elapsed}s ========== COMPLETED ==========`, 'color: #10b981; font-weight: bold');
+                console.log(`[TEST] +${elapsed}s Final IAE Score: ${finalScore}`);
+                console.log(`[TEST] +${elapsed}s Total Duration: ${totalDuration?.toFixed(1)}s`);
+                console.log(`[TEST] ==================================`);
+                
+                isTestRunning = false;
+                setTestModeUI(false);
+                
+                setTimeout(() => {
+                    showScoreModal(finalScore, currentControlMode, totalDuration?.toFixed(1));
+                }, 100);
+                if (dom.runTestBtn) dom.runTestBtn.textContent = `Run Test`;
+            }
+        } else {
+            if (dom.runTestBtn) dom.runTestBtn.textContent = `Test: Boiler Fail (${testStageTimer.toFixed(0)}s)`;
         }
     }
 }
