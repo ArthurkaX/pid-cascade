@@ -32,7 +32,7 @@ function initUITooltips() {
         const hintEl = e.target.closest('[data-hint]');
         if (hintEl) {
             activeElement = hintEl;
-            if (isAltPressed) showHint(hintEl, uiTooltip);
+            showHint(hintEl, uiTooltip);
         }
     });
 
