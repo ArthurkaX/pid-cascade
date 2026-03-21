@@ -23,7 +23,7 @@ const InputDB = {
     dist_ValveWear: 0,              // 0-100%
     dist_PressureNoise: 0,          // BAR (0..1)
     dist_InletTempSP: 20,           // Target inlet temperature (TT202 target)
-    dist_InletTempRate: 0.5,        // Change rate (°C/s)
+    dist_InletTempRate: 0.05,       // Change rate (°C/s)
     
     // PID Master params
     master_Kp: 2.0,
