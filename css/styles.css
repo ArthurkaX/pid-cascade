@@ -947,17 +947,13 @@ body.alt-pressed .score-value:hover {
 }
 
 .schemes-section {
-    max-width: 800px;
-    margin: 2rem auto;
-    padding: 1.5rem;
-    background: #f8fafc;
-    border-radius: 0.5rem;
+    width: 100%;
 }
 
-.schemes-section h2 {
-    color: #1e293b;
+.schemes-section .section-header {
     margin-bottom: 1rem;
-    text-align: center;
+    border-bottom: 2px solid #e2e8f0;
+    padding-bottom: 0.5rem;
 }
 
 .schemes-container {
@@ -980,6 +976,5 @@ body.alt-pressed .score-value:hover {
     color: #64748b;
     font-size: 0.875rem;
     text-align: center;
-    margin-top: 0.5rem;
     font-style: italic;
 }
