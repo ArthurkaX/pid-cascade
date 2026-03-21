@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# IDE / Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+
+# Backup files
+*.backup
+*.bak
+*.$*
+
+# Logs
+*.log
+npm-debug.log*
