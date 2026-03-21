@@ -46,7 +46,7 @@ function startTest(hmi, dom, plcWorker, setDisturbanceFlags, setTestModeUI) {
     
     plcWorker.postMessage({ type: 'RESET_IAE' });
     setTestModeUI(true);
-    console.log(`[TEST] +0.0s Phase 1: Stabilize (waiting ${TEST_SETTLED_DURATION}s with |delta|<${TEST_SETTLED_THRESHOLD}°C)`);
+    console.log(`[TEST] +0.0s Phase 1: Inlet to 5°C (waiting ${TEST_SETTLED_DURATION}s with |delta|<${TEST_SETTLED_THRESHOLD}°C)`);
 }
 
 function handleTestStateMachine(hmi, inputs, dom, plcWorker, setDisturbanceFlags, setTestModeUI) {

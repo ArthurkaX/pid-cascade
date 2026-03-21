@@ -1181,13 +1181,21 @@ function startTest(hmi) {
     
     plcWorker.postMessage({ type: 'RESET_IAE' });
     setTestModeUI(true);
-    console.log(`[TEST] +0.0s Phase 1: Stabilize (waiting ${TEST_SETTLED_DURATION}s with |delta|<${TEST_SETTLED_THRESHOLD}°C)`);
+    const speed = lastInputs?.cfg_SpeedMultiplier ?? 1;
+    const speedLabel = speed === 0 ? 'Pause (0x)' :
+                       speed === 1 ? 'Normal (1x)' :
+                       speed === 2 ? 'Quick (2x)' :
+                       speed === 5 ? 'Fast (5x)' :
+                       speed === 10 ? 'Turbo (10x)' :
+                       speed === 20 ? 'Ludicrous (20x)' : `${speed}x`;
+    console.log(`[TEST] +0.0s Simulation speed = ${speedLabel}`);
+    console.log(`[TEST] +0.0s Phase 1: Inlet to 5°C (waiting ${TEST_SETTLED_DURATION}s with |delta|<${TEST_SETTLED_THRESHOLD}°C)`);
     console.log(`[TEST] +0.0s Test sequence: 4 phases + boiler failure`);
     console.log(`[TEST] +0.0s Settled threshold: ${TEST_SETTLED_THRESHOLD}°C`);
 }
 
 const TEST_PHASES = [
-    { name: 'Stabilize', inletTemp: 5, timeout: TEST_PHASE_TIMEOUT.stabilize, nextLog: 'Stabilizing at 5°C inlet' },
+    { name: 'Inlet to 5°C', inletTemp: 5, timeout: TEST_PHASE_TIMEOUT.stabilize, nextLog: 'Stabilizing at 5°C inlet' },
     { name: 'Cold Product 5°C', inletTemp: 5, timeout: TEST_PHASE_TIMEOUT.product, nextLog: 'Testing at 5°C (Cold Product)' },
     { name: 'Water 15°C', inletTemp: 15, timeout: TEST_PHASE_TIMEOUT.water, nextLog: 'Inlet → 15°C (Water)' },
     { name: 'Boiler Failure', inletTemp: 15, boilerFail: true, timeout: TEST_PHASE_TIMEOUT.boiler, nextLog: 'Boiler Failure ON' }
@@ -1339,8 +1347,15 @@ function setupSpeedSelector() {
     if (dom.speedSelector) {
         dom.speedSelector.addEventListener('change', (e) => {
             const speed = parseInt(e.target.value);
+            const speedLabel = speed === 0 ? 'Pause (0x)' :
+                               speed === 1 ? 'Normal (1x)' :
+                               speed === 2 ? 'Quick (2x)' :
+                               speed === 5 ? 'Fast (5x)' :
+                               speed === 10 ? 'Turbo (10x)' :
+                               speed === 20 ? 'Ludicrous (20x)' : `${speed}x`;
             plcWorker.postMessage({ type: 'WRITE_INPUTS', payload: { cfg_SpeedMultiplier: speed } });
             updateModeDisplay(speed > 0 ? 'running' : 'stopped');
+            console.log(`[SYSTEM] Simulation speed changed to ${speedLabel}`);
         });
     }
 }

@@ -11,7 +11,7 @@ const DEFAULT_SETPOINT = 72;
 const DEFAULT_TEMPS = { product: 20, water: 55 };
 
 const TEST_PHASES = [
-    { name: 'Stabilize', inletTemp: 5, timeout: TEST_PHASE_TIMEOUT.stabilize, nextLog: 'Inlet → 5°C (Cold Product)' },
+    { name: 'Inlet to 5°C', inletTemp: 5, timeout: TEST_PHASE_TIMEOUT.stabilize, nextLog: 'Inlet → 5°C (Cold Product)' },
     { name: 'Cold Product 5°C', inletTemp: 15, timeout: TEST_PHASE_TIMEOUT.product, nextLog: 'Inlet → 15°C (Water)' },
     { name: 'Water 15°C', boilerFail: true, timeout: TEST_PHASE_TIMEOUT.water, nextLog: 'Boiler Failure ON' }
 ];

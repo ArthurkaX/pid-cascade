@@ -181,8 +181,15 @@ function setupSpeedSelector(dom, plcWorker, updateModeDisplay, getIsTestRunning,
     if (dom.speedSelector) {
         dom.speedSelector.addEventListener('change', (e) => {
             const speed = parseInt(e.target.value);
+            const speedLabel = speed === 0 ? 'Pause (0x)' :
+                               speed === 1 ? 'Normal (1x)' :
+                               speed === 2 ? 'Quick (2x)' :
+                               speed === 5 ? 'Fast (5x)' :
+                               speed === 10 ? 'Turbo (10x)' :
+                               speed === 20 ? 'Ludicrous (20x)' : `${speed}x`;
             plcWorker.postMessage({ type: 'WRITE_INPUTS', payload: { cfg_SpeedMultiplier: speed } });
             updateModeDisplay(speed > 0 ? 'running' : 'stopped', dom, getIsTestRunning, updateChartVariablesFn);
+            console.log(`[SYSTEM] Simulation speed changed to ${speedLabel}`);
         });
     }
 }
