@@ -22,6 +22,8 @@ const DEFAULT_TEMPS = { product: 20, water: 55 };
 let lastTestScore = null;
 let lastTestMode = null;
 let lastTestDuration = null;
+let isResettingForTest = false;
+let lastIAEActive = false;
 
 function showScoreModal(score, mode, duration) {
     lastTestScore = score;
@@ -926,6 +928,12 @@ function handleStateUpdate(payload) {
 }
 
 function handleSceneReset() {
+    if (isResettingForTest) {
+        isResettingForTest = false;
+        lastIAEActive = false;
+        return;
+    }
+    
     if (isTestRunning) {
         isTestRunning = false;
         testInletReached = false;
@@ -942,6 +950,8 @@ function handleSceneReset() {
     
     if (dom.valveSlider) dom.valveSlider.value = 0;
     if (dom.valveSliderValue) dom.valveSliderValue.textContent = '0%';
+    
+    lastIAEActive = false;
     
     rebuildChart();
 }
@@ -984,6 +994,13 @@ function updateDisplay(hmi, outputs, inputs) {
     if (dom.iaeDisplay) {
         dom.iaeDisplay.textContent = hmi.score_IAE.toFixed(2);
     }
+    
+    if (!lastIAEActive && hmi.vis_IAEActive) {
+        const sp = (inputs && inputs.cfg_ControlMode === 'single') ? (inputs.single_SP || 72) : (inputs.master_SP || 72);
+        const pv = hmi.vis_TMilkOutlet || 0;
+        console.log(`%c[IAE] Activated at t=${hmi.vis_SimulationTime.toFixed(1)}s (PV=${pv.toFixed(1)}°C >= SP=${sp}°C)`, 'color: #8b5cf6; font-weight: bold');
+    }
+    lastIAEActive = hmi.vis_IAEActive;
     if (dom.deltaDisplay) {
         dom.deltaDisplay.textContent = (hmi.vis_ProductDelta || 0).toFixed(2) + ' °C';
         // Add visual color feedback
@@ -1154,29 +1171,38 @@ function sendUpdate(key, value) {
 function startTest(hmi) {
     if (isTestRunning) return;
     isTestRunning = true;
-    testState = 1;
+    testState = 0;
     testStageTimer = 0;
     testSettledTimer = 0;
     previousSimTime = hmi.vis_SimulationTime;
-    testStartTime = hmi.vis_SimulationTime;
+    testStartTime = 0;
     testInletReached = false;
     testInletLastLogged = -1;
     lastProcessedTestState = -1;
     boilerTargetReached = false;
     boilerHoldTimer = 0;
     
+    const mode = currentControlMode || 'unknown';
+    const sp = (mode === 'single') ? lastInputs?.single_SP : lastInputs?.master_SP;
+    
+    isResettingForTest = true;
+    plcWorker.postMessage({ type: 'RESET_SCENE' });
+    
     disturbanceFlags |= 0x02;
     disturbanceFlags &= ~0x01;
     
-    const mode = currentControlMode || 'unknown';
-    const sp = (mode === 'single') ? lastInputs?.single_SP : lastInputs?.master_SP;
     console.log(`%c[TEST] +0.0s ========== STARTED ==========`, 'color: #f59e0b; font-weight: bold');
-    console.log(`[TEST] +0.0s Mode: ${mode} | SP: ${sp}°C | Initial Delta: ${hmi.vis_ProductDelta?.toFixed(2)}°C`);
+    console.log(`[TEST] +0.0s Mode: ${mode} | SP: ${sp}°C | Temperatures reset to 20°C`);
     console.log(`[TEST] +0.0s Disturbances: ValveWear=2.5%, PressureNoise=0.5 BAR`);
     
     plcWorker.postMessage({
         type: 'WRITE_INPUTS',
-        payload: { dist_ValveWear: 2.5, dist_PressureNoise: 0.5, cmd_DisturbanceFlags: disturbanceFlags }
+        payload: { 
+            dist_ValveWear: 2.5, 
+            dist_PressureNoise: 0.5, 
+            cmd_DisturbanceFlags: disturbanceFlags,
+            cfg_ControlMode: mode
+        }
     });
 
     if (dom.distValveWear) dom.distValveWear.value = 2.5;
@@ -1195,12 +1221,13 @@ function startTest(hmi) {
                        speed === 10 ? 'Turbo (10x)' :
                        speed === 20 ? 'Ludicrous (20x)' : `${speed}x`;
     console.log(`[TEST] +0.0s Simulation speed = ${speedLabel}`);
-    console.log(`[TEST] +0.0s Phase 1: Inlet to 5°C (waiting ${TEST_SETTLED_DURATION}s with |delta|<${TEST_SETTLED_THRESHOLD}°C)`);
-    console.log(`[TEST] +0.0s Test sequence: 4 phases + boiler failure`);
+    console.log(`[TEST] +0.0s Phase 0: Warmup (waiting for PV>=SP + ${TEST_SETTLED_DURATION}s settle)`);
+    console.log(`[TEST] +0.0s Test sequence: Warmup + 4 phases + boiler failure`);
     console.log(`[TEST] +0.0s Settled threshold: ${TEST_SETTLED_THRESHOLD}°C`);
 }
 
 const TEST_PHASES = [
+    { name: 'Warmup', timeout: 360, nextLog: 'Starting test phases' },
     { name: 'Inlet to 5°C', inletTemp: 5, timeout: TEST_PHASE_TIMEOUT.stabilize, nextLog: 'Stabilizing at 5°C inlet' },
     { name: 'Cold Product 5°C', inletTemp: 5, timeout: TEST_PHASE_TIMEOUT.product, nextLog: 'Testing at 5°C (Cold Product)' },
     { name: 'Water 15°C', inletTemp: 15, timeout: TEST_PHASE_TIMEOUT.water, nextLog: 'Inlet → 15°C (Water)' },
@@ -1215,12 +1242,12 @@ function handleTestStateMachine(hmi, inputs) {
     previousSimTime = hmi.vis_SimulationTime;
     testStageTimer += dt;
     
-    const elapsed = (hmi.vis_SimulationTime - testStartTime).toFixed(1);
+    const elapsed = Math.max(0, hmi.vis_SimulationTime - testStartTime).toFixed(1);
     const phaseIndex = testState - 1;
     
     if (testState !== lastProcessedTestState) {
         if (testState >= 1 && testState <= 4) {
-            const phase = TEST_PHASES[testState - 1];
+            const phase = TEST_PHASES[testState];
             if (phase.inletTemp !== undefined) {
                 plcWorker.postMessage({ type: 'WRITE_INPUTS', payload: { dist_InletTempSP: phase.inletTemp } });
                 if (dom.distInletTemp) dom.distInletTemp.value = phase.inletTemp;
@@ -1230,8 +1257,42 @@ function handleTestStateMachine(hmi, inputs) {
         lastProcessedTestState = testState;
     }
     
-    if (testState >= 1 && testState <= 4) {
-        const phase = TEST_PHASES[phaseIndex];
+    if (testState === 0) {
+        const phase = TEST_PHASES[0];
+        const sp = (currentControlMode === 'single') ? (lastInputs?.single_SP || 72) : (lastInputs?.master_SP || 72);
+        const currentPV = hmi.vis_TMilkOutlet || 0;
+        const pvReached = currentPV >= sp;
+        
+        if (dom.runTestBtn) {
+            if (pvReached) {
+                dom.runTestBtn.textContent = `Test: Settling (${(TEST_SETTLED_DURATION - testSettledTimer).toFixed(0)}s)`;
+            } else {
+                dom.runTestBtn.textContent = `Test: Warmup PV=${currentPV.toFixed(1)}°C`;
+            }
+        }
+        
+        const currentSecond = Math.floor(testStageTimer);
+        if (testInletLastLogged !== currentSecond && currentSecond % 5 === 0) {
+            console.log(`[TEST] +${elapsed}s Warmup: PV=${currentPV.toFixed(1)}°C / SP=${sp}°C (Δ=${(sp - currentPV).toFixed(1)}°C) | IAEActive=${hmi.vis_IAEActive}`);
+            testInletLastLogged = currentSecond;
+        }
+        
+        if (pvReached) {
+            testSettledTimer = Math.abs(hmi.vis_ProductDelta) < TEST_SETTLED_THRESHOLD ? testSettledTimer + dt : 0;
+        }
+        
+        if (testSettledTimer >= TEST_SETTLED_DURATION) {
+            console.log(`[TEST] +${elapsed}s Phase 0: Warmup completed | PV=${currentPV.toFixed(1)}°C | delta=${hmi.vis_ProductDelta?.toFixed(2)}°C`);
+            console.log(`[TEST] +${elapsed}s Phase 0 → 1: ${phase.nextLog}`);
+            
+            testState = 1;
+            testStageTimer = 0;
+            testSettledTimer = 0;
+            testInletLastLogged = -1;
+        }
+    }
+    else if (testState >= 1 && testState <= 4) {
+        const phase = TEST_PHASES[testState];
         const remaining = Math.max(0, TEST_SETTLED_DURATION - testStageTimer).toFixed(0);
         
         if (dom.runTestBtn) dom.runTestBtn.textContent = `Test: ${phase.name} (${remaining}s)`;
@@ -1239,7 +1300,7 @@ function handleTestStateMachine(hmi, inputs) {
         if (phase.inletTemp !== undefined && !testInletReached) {
             const inletDelta = Math.abs(hmi.vis_TMilkInlet - phase.inletTemp);
             const currentSecond = Math.floor(testStageTimer);
-            if (testInletLastLogged !== currentSecond) {
+            if (testInletLastLogged !== currentSecond && currentSecond % 5 === 0) {
                 console.log(`[TEST] +${elapsed}s Inlet TT202=${hmi.vis_TMilkInlet?.toFixed(1)}°C → target=${phase.inletTemp}°C (Δ=${inletDelta.toFixed(1)}°C)`);
                 testInletLastLogged = currentSecond;
             }
@@ -1394,19 +1455,13 @@ function setupTestButton() {
         if (isTestRunning) return;
         const mode = currentControlMode || 'manual';
         const currentSP = (mode === 'single') ? lastInputs?.single_SP : lastInputs?.master_SP;
-        const delta = Math.abs(lastHmi?.vis_ProductDelta ?? 999);
         
         if (currentSP !== DEFAULT_SETPOINT) {
             console.log(`%c[TEST] BLOCKED: SP=${currentSP}°C (need ${DEFAULT_SETPOINT}°C)`, 'color: #ef4444');
             alert(`Test requires SP = ${DEFAULT_SETPOINT}°C.\nCurrent SP: ${currentSP}°C`);
             return;
         }
-        if (delta >= 1.0) {
-            console.log(`%c[TEST] BLOCKED: delta=${delta.toFixed(2)}°C (need <1.0°C)`, 'color: #ef4444');
-            alert(`Test requires stable process (|PV-SP| < 1°C).\nCurrent delta: ${delta.toFixed(2)}°C`);
-            return;
-        }
-        console.log(`[TEST] Preconditions OK: SP=${currentSP}°C, delta=${delta.toFixed(2)}°C`);
+        console.log(`[TEST] Starting test: SP=${currentSP}°C (will reset temperatures to 20°C)`);
         requestTestStart = true;
     });
 }

@@ -222,6 +222,8 @@ function step(dt) {
         if (!iaeActive) {
             if (currentPV >= activeSP) {
                 iaeActive = true;
+                HmiDB.vis_IAEActive = true;
+                console.log(`[process.js] IAE Activated at t=${simTime.toFixed(1)}s (PV=${currentPV.toFixed(1)}°C >= SP=${activeSP}°C)`);
             }
         }
         
@@ -261,5 +263,6 @@ function resetPhysics() {
     
     // Reset IAE
     HmiDB.score_IAE = 0;
+    HmiDB.vis_IAEActive = false;
     iaeActive = false;
 }

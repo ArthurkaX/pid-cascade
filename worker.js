@@ -23,7 +23,7 @@ const InputDB = {
     dist_ValveWear: 0,              // 0-100%
     dist_PressureNoise: 0,          // BAR (0..1)
     dist_InletTempSP: 20,           // Target inlet temperature (TT202 target)
-    dist_InletTempRate: 0.05,       // Change rate (°C/s)
+    dist_InletTempRate: 0.065,      // Change rate (°C/s) - accelerated 30%
     
     // PID Master params
     master_Kp: 2.0,
@@ -88,6 +88,7 @@ const HmiDB = {
     
     // scoring
     score_IAE: 0,                    // Integral Absolute Error
+    vis_IAEActive: false,            // IAE accumulation active (after first PV >= SP)
     vis_ProductDelta: 0,             // Current deviation (PV - SP)
     
     // Time
@@ -162,6 +163,7 @@ self.onmessage = function(event) {
         });
     } else if (msg.type === 'RESET_IAE') {
         HmiDB.score_IAE = 0;
+        HmiDB.vis_IAEActive = false;
     }
 };
 
@@ -402,11 +404,15 @@ function plcCycle() {
         
         // Send state to HMI at the same frequency as PID (25Hz / 40ms)
         // This prevents the UI from choking on 100fps updates with large datasets
+        const hmiUpdate = { ...HmiDB };
+        if (typeof hmiUpdate.vis_IAEActive === 'undefined') {
+            hmiUpdate.vis_IAEActive = false;
+        }
         self.postMessage({
             type: 'PLC_STATE_UPDATE',
             payload: {
                 outputs: { ...OutputDB },
-                hmi: { ...HmiDB },
+                hmi: hmiUpdate,
                 inputs: { ...InputDB }
             }
         });
