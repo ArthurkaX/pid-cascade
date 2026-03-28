@@ -4,6 +4,8 @@ Browser-based interactive simulator demonstrating cascade PID control advantages
 
 **Live Demo:** https://arthurkax.github.io/pid-cascade/
 
+![PID Cascade Simulator Demo](img/pid-cascade.gif)
+
 ## How to Use
 
 Simply open the simulator in your browser - no installation required. The simulation starts automatically.
