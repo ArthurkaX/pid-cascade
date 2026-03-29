@@ -124,4 +124,30 @@ async function incrementPageView() {
     }
 }
 
+async function incrementTestsMade() {
+    if (!db) {
+        console.error('[Firebase] Firestore not initialized');
+        return;
+    }
+    
+    try {
+        await db.collection('tests_made').doc('counter').update({
+            count: firebase.firestore.FieldValue.increment(1)
+        });
+        console.log('[Firebase] Tests made incremented');
+    } catch (error) {
+        if (error.code === 'not-found') {
+            try {
+                await db.collection('tests_made').doc('counter').set({ count: 1 });
+                console.log('[Firebase] Tests made counter created and initialized to 1');
+            } catch (createError) {
+                console.error('[Firebase] Error creating tests made counter:', createError);
+            }
+        } else {
+            console.error('[Firebase] Error incrementing tests made:', error);
+        }
+    }
+}
+
 window.incrementPageView = incrementPageView;
+window.incrementTestsMade = incrementTestsMade;

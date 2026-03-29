@@ -1356,6 +1356,7 @@ function handleTestStateMachine(hmi, inputs) {
                 
                 isTestRunning = false;
                 setTestModeUI(false);
+                incrementTestsMade();
                 
                 setTimeout(() => {
                     showScoreModal(finalScore, currentControlMode, totalDuration?.toFixed(1));
