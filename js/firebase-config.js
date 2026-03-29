@@ -98,3 +98,30 @@ function subscribeToLeaderboard(callback, limit = 10) {
             }
         );
 }
+
+async function incrementPageView() {
+    if (!db) {
+        console.error('[Firebase] Firestore not initialized');
+        return;
+    }
+    
+    try {
+        await db.collection('page_visits').doc('counter').update({
+            visits: firebase.firestore.FieldValue.increment(1)
+        });
+        console.log('[Firebase] Page view incremented');
+    } catch (error) {
+        if (error.code === 'not-found') {
+            try {
+                await db.collection('page_visits').doc('counter').set({ visits: 1 });
+                console.log('[Firebase] Page view counter created and initialized to 1');
+            } catch (createError) {
+                console.error('[Firebase] Error creating page view counter:', createError);
+            }
+        } else {
+            console.error('[Firebase] Error incrementing page view:', error);
+        }
+    }
+}
+
+window.incrementPageView = incrementPageView;

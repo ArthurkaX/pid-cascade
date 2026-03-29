@@ -245,6 +245,9 @@ function setupAllListeners(dom, plcWorker, updateModeDisplay, getIsTestRunning, 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('HMI DOMContentLoaded');
     
+    initFirebase();
+    incrementPageView();
+    
     setTimeout(() => {
         try {
             console.log('[main.js] Step 1: cacheDOM');

@@ -1629,6 +1629,7 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('HMI DOMContentLoaded');
     
     initFirebase();
+    incrementPageView();
     setupModalEventListeners();
     
     // Small delay to ensure SVG is fully loaded
