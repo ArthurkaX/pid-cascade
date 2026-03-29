@@ -1378,6 +1378,8 @@ function setTestModeUI(active) {
         dom.runTestBtn.textContent = active ? 'Testing...' : 'Run Test';
     }
 
+    if (dom.resetIaeBtn) dom.resetIaeBtn.disabled = active;
+
     const panels = document.querySelectorAll('.control-panel, .manual-control');
     panels.forEach(p => {
         const inputs = p.querySelectorAll('input, button');
@@ -1445,7 +1447,10 @@ function setupResetButtons() {
         dom.resetBtn.addEventListener('click', () => plcWorker.postMessage({ type: 'RESET_SCENE' }));
     }
     if (dom.resetIaeBtn) {
-        dom.resetIaeBtn.addEventListener('click', () => plcWorker.postMessage({ type: 'RESET_IAE' }));
+        dom.resetIaeBtn.addEventListener('click', () => {
+            if (isTestRunning) return;
+            plcWorker.postMessage({ type: 'RESET_IAE' });
+        });
     }
 }
 
