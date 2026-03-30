@@ -131,7 +131,10 @@ self.onmessage = function(event) {
             payload.master_Td !== undefined ||
             payload.slave_Kp !== undefined ||
             payload.slave_Ti !== undefined ||
-            payload.slave_Td !== undefined) {
+            payload.slave_Td !== undefined ||
+            payload.single_Kp !== undefined ||
+            payload.single_Ti !== undefined ||
+            payload.single_Td !== undefined) {
             Object.assign(InputDB, payload);
             updatePIDParams();
         } else {
