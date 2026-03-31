@@ -86,30 +86,58 @@ The simulator includes protection against common numerical stability issues foun
 
 ---
 
-> **Note:** Would you like me to provide an example calculating the output signal response to a setpoint step-change using different values for the weighting coefficient $b$?
+## 8. Default PID Parameters
 
-1. Сбалансированные (универсальные)
-   Это лучший вариант для работы с включенными возмущениями (Pressure Noise):
+### PID Master (Primary Controller)
+- **$K_p$**: 2.0
+- **$T_i$**: 4.0 s
+- **$T_d$**: 0.5 s
+- **Deadband**: 0.0 °C
+- **Setpoint Weight ($b$)**: 1.0
+- **Derivative Weight ($a$)**: 0.0
+- **Derivative Filter ($c$)**: 0.1
+- **Setpoint**: 72 °C
 
-Kp: 1.8
-Ti: 8.0 сек
-Td: 1.0 сек
-Deadband: 0.05 °C
-Почему: $Kp$ не слишком высокий, чтобы не "раскачать" систему на 5-секундной задержке, а $Td$ помогает регулятору заранее реагировать на скорость изменения температуры.
+### PID Slave (Secondary Controller)
+- **$K_p$**: 5.0
+- **$T_i$**: 2.5 s
+- **$T_d$**: 0.1 s
+- **Deadband**: 0.0 °C
+- **Setpoint Weight ($b$)**: 1.0
+- **Derivative Weight ($a$)**: 0.0
+- **Derivative Filter ($c$)**: 0.1
 
-2. Консервативные (максимальная стабильность)
-   Если вам нужно, чтобы график был идеально ровным, без единого перерегулирования:
+### PID Single (Standalone Mode)
+- **$K_p$**: 1.5
+- **$T_i$**: 5.0 s
+- **$T_d$**: 0.5 s
+- **Deadband**: 0.0 °C
+- **Setpoint Weight ($b$)**: 1.0
+- **Derivative Weight ($a$)**: 0.0
+- **Derivative Filter ($c$)**: 0.1
+- **Setpoint**: 72 °C
 
-Kp: 1.2
-Ti: 12.0 сек
-Td: 0.0 сек
-Deadband: 0.10 °C
-Почему: Медленный, но очень надежный вариант. Система будет выходить на уставку дольше (около 40-50 сек), но никогда не "перелетит" её.
+### Tuning Guidelines
 
-3. Агрессивные (быстрый прогрев)
-   Если нужно выйти на 72 °C максимально быстро (например, при старте):
+#### 1. Balanced (Universal)
+Best option for operation with pressure noise enabled:
+- **$K_p$**: 1.8
+- **$T_i$**: 8.0 s
+- **$T_d$**: 1.0 s
+- **Deadband**: 0.05 °C
+- **Why**: Moderate $K_p$ prevents oscillation with 5-second transport delay, while $T_d$ helps the controller anticipate temperature change rate.
 
-Kp: 2.5
-Ti: 6.0 сек
-Td: 2.0 сек
-Deadband: 0.02 °C
+#### 2. Conservative (Maximum Stability)
+If you need a perfectly smooth response without overshoot:
+- **$K_p$**: 1.2
+- **$T_i$**: 12.0 s
+- **$T_d$**: 0.0 s
+- **Deadband**: 0.10 °C
+- **Why**: Slower but very reliable. The system takes longer to reach setpoint (~40-50 s) but never overshoots.
+
+#### 3. Aggressive (Fast Heating)
+For maximum speed when reaching 72 °C (e.g., during startup):
+- **$K_p$**: 2.5
+- **$T_i$**: 6.0 s
+- **$T_d$**: 2.0 s
+- **Deadband**: 0.02 °C
