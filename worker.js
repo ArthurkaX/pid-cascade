@@ -434,6 +434,19 @@ function executePID() {
     const dt = 0.04; // 40ms
     
     const mode = InputDB.cfg_ControlMode;
+    let activeSP = InputDB.master_SP;
+    if (mode === 'single') {
+        activeSP = (InputDB.single_SP !== undefined && InputDB.single_SP !== null)
+            ? InputDB.single_SP
+            : InputDB.master_SP;
+    }
+    const isPaused = InputDB.cfg_SpeedMultiplier === 0;
+    const safeSP = activeSP ?? 0;
+
+    if (isPaused && mode !== 'manual') {
+        HmiDB.vis_ProductDelta = HmiDB.vis_TMilkOutlet - safeSP;
+        return;
+    }
     
     if (mode === 'manual') {
         pidMaster.setMode('manual');
@@ -477,9 +490,7 @@ function executePID() {
     }
 
     // Calculate Product Delta for HMI (Current PV - Required SP)
-    let activeSP = InputDB.master_SP;
-    if (mode === 'single') activeSP = InputDB.single_SP;
-    HmiDB.vis_ProductDelta = HmiDB.vis_TMilkOutlet - activeSP;
+    HmiDB.vis_ProductDelta = HmiDB.vis_TMilkOutlet - safeSP;
 }
 
 // ==========================================
