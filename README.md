@@ -1,5 +1,13 @@
 # PID Cascade Simulator - Pasteurizer
 
+[![Release](https://img.shields.io/github/v/release/ArthurkaX/pid-cascade?include_prereleases&sort=semver)](https://github.com/ArthurkaX/pid-cascade/releases)
+[![Downloads](https://img.shields.io/github/downloads/ArthurkaX/pid-cascade/total)](https://github.com/ArthurkaX/pid-cascade/releases)
+[![Stars](https://img.shields.io/github/stars/ArthurkaX/pid-cascade?style=flat)](https://github.com/ArthurkaX/pid-cascade/stargazers)
+[![Forks](https://badgen.net/github/forks/ArthurkaX/pid-cascade)](https://github.com/ArthurkaX/pid-cascade/forks)
+[![Issues](https://img.shields.io/github/issues/ArthurkaX/pid-cascade)](https://github.com/ArthurkaX/pid-cascade/issues)
+[![Last commit](https://img.shields.io/github/last-commit/ArthurkaX/pid-cascade)](https://github.com/ArthurkaX/pid-cascade/commits/main)
+[![License](https://img.shields.io/github/license/ArthurkaX/pid-cascade)](LICENSE)
+
 Browser-based interactive simulator demonstrating cascade PID control advantages over single-loop control for pasteurization processes.
 
 **Live Demo:** https://arthurkax.github.io/pid-cascade/
